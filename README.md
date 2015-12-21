@@ -8,7 +8,7 @@ Store the results of your test runs in Elasticsearch via custom formatters.
 Add this line to your application's Gemfile:
 
 ```ruby
-gem 'elastic_results', git: 'git@git.innova-partners.com:testing/elastic_results.git'
+gem 'elastic_results'
 ```
 
 And then execute:
@@ -120,5 +120,5 @@ To install this gem onto your local machine, run `bundle exec rake install`. To 
 
 ## Contributing
 
-Bug reports and pull requests are welcome on GitHub at https://github.com/[USERNAME]/elastic_results.
+Bug reports and pull requests are welcome on GitHub at https://github.com/covermymeds/elastic_results
 
