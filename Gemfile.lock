@@ -1,0 +1,33 @@
+PATH
+  remote: .
+  specs:
+    elastic_results (0.1.0)
+      elasticsearch
+
+GEM
+  remote: https://rubygems.org/
+  specs:
+    elasticsearch (1.0.15)
+      elasticsearch-api (= 1.0.15)
+      elasticsearch-transport (= 1.0.15)
+    elasticsearch-api (1.0.15)
+      multi_json
+    elasticsearch-transport (1.0.15)
+      faraday
+      multi_json
+    faraday (0.9.1)
+      multipart-post (>= 1.2, < 3)
+    multi_json (1.11.2)
+    multipart-post (2.0.0)
+    rake (10.4.2)
+
+PLATFORMS
+  ruby
+
+DEPENDENCIES
+  bundler (~> 1.10)
+  elastic_results!
+  rake (~> 10.0)
+
+BUNDLED WITH
+   1.10.6

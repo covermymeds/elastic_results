@@ -1,0 +1,95 @@
+{
+  "mappings": {
+    "test_result": {
+      "_timestamp": {
+        "enabled": true
+      },
+      "properties": {
+        "@timestamp": {
+          "type": "date",
+          "format": "dateOptionalTime"
+        },
+        "environment":{
+          "type": "string",
+          "index" : "not_analyzed",
+          "null_value" : "na"
+        },
+        "suite_name":{
+          "type": "string",
+          "null_value" : "na"
+        },
+        "suite_type": {
+          "type": "string",
+          "index": "not_analyzed",
+          "null_value" : "na"
+        },
+        "team":{
+          "type": "string",
+          "null_value" : "na"
+        },
+        "outcome": {
+          "type": "string",
+          "index" : "not_analyzed",
+          "null_value" : "na"
+        },
+        "exception_msg": {
+          "type": "string"
+        },
+        "exception_class": {
+          "type": "string",
+          "null_value" : "na"
+        },
+        "exception_stacktrace": {
+          "type": "string",
+          "null_value" : "na"
+        },
+        "runtime" : {
+          "type": "float"
+        },
+        "build_number": {
+          "type": "string",
+          "index" : "not_analyzed",
+          "null_value" : "na"
+        },
+        "build_url": {
+          "type": "string",
+          "index" : "not_analyzed",
+          "null_value" : "na"
+        },
+        "node_name": {
+          "type": "string",
+          "index" : "not_analyzed",
+          "null_value" : "na"
+        },
+        "job_name": {
+          "type": "string",
+          "index" : "not_analyzed",
+          "null_value" : "na"
+        },
+        "build_tag": {
+          "type": "string",
+          "index" : "not_analyzed",
+          "null_value" : "na"
+        },
+        "git_commit": {
+          "type": "string",
+          "index" : "not_analyzed",
+          "null_value" : "na"
+        },
+        "git_url": {
+          "type": "string",
+          "index" : "not_analyzed",
+          "null_value" : "na"
+        },
+        "git_branch": {
+          "type": "string",
+          "index" : "not_analyzed",
+          "null_value" : "na"
+        },
+        "tags": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}
