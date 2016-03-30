@@ -27,6 +27,7 @@ module ElasticResults
     attr_accessor :google_api_key
     attr_accessor :kibana_url
     attr_accessor :use_unsafe_index
+    attr_accessor :checked_types
   end
 
   # Return the mapping JSON for used in creating indicies
@@ -53,35 +54,26 @@ module ElasticResults
 
   # Generic index function that knows when to use the elasticsearch API.
   def self.index(index, type, payload)
-    begin
-      with_disabled_mocks {
-        if ElasticResults.use_unsafe_index
-          unsafe_index index, type, payload.to_hash
-        else
-          client.index index: index, type: type, body: payload.to_hash
-        end
-      }
-    rescue Exception => ex
-      puts "#{ex.message} while storing results in Elasticsearch"
+  begin
+    ensure_index_exists(index: index, type: type)
+    with_disabled_mocks do
+      if ElasticResults.use_unsafe_index
+        unsafe_index index, type, payload.to_hash
+      else
+        client.index index: index, type: type, body: payload.to_hash
+      end
     end
-
-
+  rescue Exception => ex
+    puts "#{ex.message} while storing results in Elasticsearch"
+  end
   end
 
   # An "unsafe" index routine which uses Net:HTTP with SSL validation turned off.  Needed for when WebMock is in use
   # as it breaks SSL cert validations.
   def self.unsafe_index(index, type, payload)
-    uri = URI.parse(ElasticResults.es_url)
-    http = Net::HTTP.new(uri.host, uri.port)
-
-    if ElasticResults.es_url =~ /https/
-      http.use_ssl = true
-      http.verify_mode = OpenSSL::SSL::VERIFY_NONE
-    end
-
     request = Net::HTTP::Post.new("/#{index}/#{type}")
     request.body = payload.to_json
-    response = http.request(request)
+    http_client.request(request)
   end
 
   # Write out a tab deliminated file containing links to the build information
@@ -111,22 +103,66 @@ module ElasticResults
 
 
   # Set up defaults for the meta data
-  ElasticResults.team_name ||= ENV['TEAM_NAME'].nil? ? '???' : ENV['TEAM_NAME']
-  ElasticResults.suite_name ||= ENV['SUITE_NAME'].nil? ? File.basename(Dir.pwd) : ENV['SUITE_NAME']
-  ElasticResults.suite_type ||= ENV['SUITE_TYPE'].nil? ? 'integration' : ENV['SUITE_TYPE']
-  ElasticResults.es_url ||= ENV['ES_HOST'].nil? ? 'http://localhost' : ENV['ES_HOST']
-  ElasticResults.es_index_result ||= ENV['ES_INDEX_RESULT'].nil? ? "test_results-#{DateTime.now.strftime('%F')}" : ENV['ES_INDEX_RESULT']
-  ElasticResults.es_type_result ||= ENV['ES_TYPE_RESULT'].nil? ? 'test_result' : ENV['ES_TYPE_RESULT']
-  ElasticResults.es_log ||= ENV['DEBUG'].nil? ? false : true
-  ElasticResults.build_id ||= DateTime.now.strftime('%Y%m%d%H%M%S%L')
-  ElasticResults.es_index_coverage ||= ENV['ES_INDEX_COVERAGE'].nil? ? "coverage-#{DateTime.now.strftime('%F')}" : ENV['ES_INDEX_COVERAGE']
-  ElasticResults.es_type_coverage ||= ENV['ES_TYPE_COVERAGE'].nil? ? 'simplecov' : ENV['ES_TYPE_COVERAGE']
-  ElasticResults.google_api_key ||= ENV['GOOGLE_API_KEY']
-  ElasticResults.kibana_url ||= ENV['KIBANA_URL'].nil? ? 'http://localhost:5601' : ENV['KIBANA_URL']
-  ElasticResults.use_unsafe_index ||= defined?(WebMock) ? true : false
-
+  ElasticResults.team_name  ||= (ENV['TEAM_NAME']  || '???')
+  ElasticResults.suite_name ||= (ENV['SUITE_NAME'] || File.basename(Dir.pwd))
+  ElasticResults.suite_type ||= (ENV['SUITE_TYPE'] || 'integration')
+  ElasticResults.es_url     ||= (ENV['ES_HOST']    || 'http://localhost')
+  ElasticResults.kibana_url ||= (ENV['KIBANA_URL'] || 'http://localhost:5601')
+  ElasticResults.es_log     ||= !ENV['DEBUG'].nil?
+  ElasticResults.build_id   ||= DateTime.now.strftime('%Y%m%d%H%M%S%L')
+  ElasticResults.es_index_result   ||= (ENV['ES_INDEX_RESULT']   || "test_results-#{DateTime.now.strftime('%F')}")
+  ElasticResults.es_type_result    ||= (ENV['ES_TYPE_RESULT']    || 'test_result')
+  ElasticResults.es_index_coverage ||= (ENV['ES_INDEX_COVERAGE'] || "coverage-#{DateTime.now.strftime('%F')}")
+  ElasticResults.es_type_coverage  ||= (ENV['ES_TYPE_COVERAGE']  || 'simplecov')
+  ElasticResults.google_api_key    ||= ENV['GOOGLE_API_KEY']
+  ElasticResults.use_unsafe_index  ||= defined?(WebMock)
+  ElasticResults.checked_types       = []
 
   private
+  def self.http_client
+    uri = URI.parse(ElasticResults.es_url)
+    http = Net::HTTP.new(uri.host, uri.port)
+
+    if ElasticResults.es_url =~ /https/
+      http.use_ssl = true
+      http.verify_mode = OpenSSL::SSL::VERIFY_NONE
+    end
+
+    http
+  end
+
+  # By controlling the index creation(instead of letting ES do it) we can
+  # make certain fields unanalyzed. This makes visualizations much more
+  # useful.
+  def self.ensure_index_exists(index: nil, type: nil)
+    return if type_already_checked? type
+    return if index_already_exists_for_type? index, type
+
+    request = Net::HTTP::Put.new("/#{index}")
+    request.body = mapping_for type
+    http_client.request(request).value # this will error if the response isn't 200
+    type_checked type
+  end
+
+  def self.index_already_exists_for_type?(index, type)
+    path = "/#{index}/#{type}"
+    response = http_client.request(Net::HTTP::Head.new(path))
+    if response.code == '200' # index is already there for that type
+      type_checked type
+      return true
+    end
+
+    return false
+  end
+
+  def self.type_already_checked?(type)
+    ElasticResults.checked_types.include? type
+  end
+
+  def self.type_checked(type)
+    ElasticResults.checked_types << type
+  end
+
   # Returns a full link to the discover page showing the test results for the current build
   def self.long_results_url
     build_id =  ENV['BUILD_NUMBER'] ? ENV['BUILD_NUMBER'] : ElasticResults.build_id

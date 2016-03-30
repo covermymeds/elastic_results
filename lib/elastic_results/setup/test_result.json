@@ -88,6 +88,22 @@
         },
         "tags": {
           "type": "string"
+        },
+        "scenario_name": {
+          "type": "string",
+          "index": "not_analyzed"
+        },
+        "suite_name": {
+          "type": "string",
+          "index": "not_analyzed"
+        },
+        "feature_name": {
+          "type": "string",
+          "index": "not_analyzed"
+        },
+        "team": {
+          "type": "string",
+          "index": "not_analyzed"
         }
       }
     }
