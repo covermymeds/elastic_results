@@ -25,10 +25,8 @@ module ElasticResults
           record_scenario feature_hash, scenario_hash
         end
       end
-      alias_method :after_features, :eof
 
       def done
-        binding.pry
         ElasticResults.write_urls
       end
 

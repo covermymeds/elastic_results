@@ -17,11 +17,10 @@ module ElasticResults
 
 
           res.tags.append(scenario_hash[:tags].map { |t| t[:name] }) unless scenario_hash[:tags].nil?
-
           # Cucumber stores times in nanoseconds for each step, because that's SUPER useful!
-          res.runtime = scenario_hash[:steps].map { |s| s[:result][:duration] }.reduce { |a, e| a + e } / 1_000_000_000.0
+          res.runtime = scenario_hash[:steps].map { |s| s[:result][:duration] }.compact.reduce { |a, e| a + e } / 1_000_000_000.0
 
-          failing_step = scenario_hash[:steps].find { |step| !step[:result].nil? && step[:result][:status] == :failed }
+          failing_step = scenario_hash[:steps].find { |step| !step[:result].nil? && [:failed, 'failed'].include?(step[:result][:status]) }
           unless failing_step.nil?
             res.exception_msg = failing_step[:result][:error_message]
             res.exception_class = res.exception_msg =~ /ExpectationNotMetError/ ? 'ExpectationNotMetError' : 'RuntimeError'
