@@ -40,6 +40,19 @@ Make this the default by adding the following to config/cucumber.yml
 default: --format pretty --format ElasticResults::Cucumber::Formatter -o /dev/null
 ```
 
+### Cucumber 1.X
+Elastic results supports older versions of cucumber through the legacy formatter.
+
+Add this line to your features/support/env.rb file:
+```ruby
+require 'elastic_results/legacy_cucumber'
+```
+
+Tell cucumber to use elastic_results:
+```
+bundle exec cucumber  --format ElasticResults::Cucumber::LegacyFormatter
+```
+
 ## RSpec Usage
 Add this line to your spec_helper.rb file:
 ```ruby
