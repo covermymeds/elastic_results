@@ -1,9 +1,5 @@
 RSpec::Support.require_rspec_core 'formatters/base_formatter'
 require 'elastic_results'
-require 'json'
-require 'elasticsearch'
-require 'time'
-require 'socket'
 
 module ElasticResults
   module RSpec
