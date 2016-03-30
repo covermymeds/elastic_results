@@ -1,6 +1,3 @@
-require 'time'
-require 'socket'
-
 module ElasticResults
   # A common data format for test results.  The Cucumber and Rspec formatters populate this class.
   class Result
