@@ -27,7 +27,6 @@ module ElasticResults
     attr_accessor :google_api_key
     attr_accessor :kibana_url
     attr_accessor :use_unsafe_index
-    attr_accessor :checked_types
   end
 
   # Return the mapping JSON for used in creating indicies
@@ -55,7 +54,8 @@ module ElasticResults
   # Generic index function that knows when to use the elasticsearch API.
   def self.index(index, type, payload)
   begin
-    ensure_index_exists(index: index, type: type)
+    ensure_index_exists(index, type)
+
     with_disabled_mocks do
       if ElasticResults.use_unsafe_index
         unsafe_index index, type, payload.to_hash
@@ -116,7 +116,6 @@ module ElasticResults
   ElasticResults.es_type_coverage  ||= (ENV['ES_TYPE_COVERAGE']  || 'simplecov')
   ElasticResults.google_api_key    ||= ENV['GOOGLE_API_KEY']
   ElasticResults.use_unsafe_index  ||= defined?(WebMock)
-  ElasticResults.checked_types       = []
 
   private
   def self.http_client
@@ -134,33 +133,18 @@ module ElasticResults
   # By controlling the index creation(instead of letting ES do it) we can
   # make certain fields unanalyzed. This makes visualizations much more
   # useful.
-  def self.ensure_index_exists(index: nil, type: nil)
-    return if type_already_checked? type
-    return if index_already_exists_for_type? index, type
+  def self.ensure_index_exists(index, type)
+    return if index_already_exists? index
 
     request = Net::HTTP::Put.new("/#{index}")
     request.body = mapping_for type
     http_client.request(request).value # this will error if the response isn't 200
-    type_checked type
   end
 
-  def self.index_already_exists_for_type?(index, type)
-    path = "/#{index}/#{type}"
+  def self.index_already_exists?(index)
+    path = "/#{index}"
     response = http_client.request(Net::HTTP::Head.new(path))
-    if response.code == '200' # index is already there for that type
-      type_checked type
-      return true
-    end
-
-    return false
-  end
-
-  def self.type_already_checked?(type)
-    ElasticResults.checked_types.include? type
-  end
-
-  def self.type_checked(type)
-    ElasticResults.checked_types << type
+    response.code == '200' # index is already there for that type
   end
 
   # Returns a full link to the discover page showing the test results for the current build
