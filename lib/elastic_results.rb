@@ -27,6 +27,7 @@ module ElasticResults
     attr_accessor :google_api_key
     attr_accessor :kibana_url
     attr_accessor :use_unsafe_index
+    attr_accessor :metadata
   end
 
   # Return the mapping JSON for used in creating indicies
@@ -63,6 +64,8 @@ module ElasticResults
         client.index index: index, type: type, body: payload.to_hash
       end
     end
+
+    ElasticResults.metadata = {}
   rescue Exception => ex
     puts "#{ex.message} while storing results in Elasticsearch"
   end
@@ -116,6 +119,7 @@ module ElasticResults
   ElasticResults.es_type_coverage  ||= (ENV['ES_TYPE_COVERAGE']  || 'simplecov')
   ElasticResults.google_api_key    ||= ENV['GOOGLE_API_KEY']
   ElasticResults.use_unsafe_index  ||= defined?(WebMock)
+  ElasticResults.metadata  ||= {}
 
   private
   def self.http_client
