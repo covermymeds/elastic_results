@@ -40,7 +40,8 @@ module ElasticResults
         git_branch: ElasticResults.git_branch,
         suite_name: ElasticResults.suite_name,
         suite_type: ElasticResults.suite_type,
-        team: ElasticResults.team_name
+        team: ElasticResults.team_name,
+        metadata: ElasticResults.metadata
       }
     end
   end
