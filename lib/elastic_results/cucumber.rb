@@ -7,7 +7,6 @@ module ElasticResults
     class Formatter < ::Cucumber::Formatter::Json
       include Reportable
 
-      alias_method :old_after_test_case, :after_test_case
       def after_test_case(test_case, result)
         old_after_test_case test_case, result
 
@@ -16,6 +15,7 @@ module ElasticResults
           record_scenario feature_hash, scenario_hash
         end
       end
+      alias_method :old_after_test_case, :after_test_case
 
       def done
         ElasticResults.write_urls
