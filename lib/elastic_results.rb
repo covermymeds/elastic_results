@@ -108,6 +108,7 @@ module ElasticResults
   ElasticResults.suite_name ||= (ENV['SUITE_NAME'] || File.basename(Dir.pwd))
   ElasticResults.suite_type ||= (ENV['SUITE_TYPE'] || 'integration')
   ElasticResults.es_url     ||= (ENV['ES_HOST']    || 'http://localhost')
+  ElasticResults.es_path     ||= (ENV['ES_PATH']    || '')
   ElasticResults.kibana_url ||= (ENV['KIBANA_URL'] || 'http://localhost:5601')
   ElasticResults.es_log     ||= !ENV['DEBUG'].nil?
   ElasticResults.build_id   ||= DateTime.now.strftime('%Y%m%d%H%M%S%L')
@@ -123,8 +124,6 @@ module ElasticResults
   def self.http_client
     uri = URI.parse(ElasticResults.es_url)
     http = Net::HTTP.new(uri.host, uri.port)
-    
-    ElasticResults.es_path ||= uri.path unless uri.path == ""
     
     if ElasticResults.es_url =~ /https/
       http.use_ssl = true
