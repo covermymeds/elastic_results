@@ -27,6 +27,7 @@ module ElasticResults
     attr_accessor :google_api_key
     attr_accessor :kibana_url
     attr_accessor :use_unsafe_index
+    attr_accessor :es_path
   end
 
   # Return the mapping JSON for used in creating indicies
@@ -71,7 +72,7 @@ module ElasticResults
   # An "unsafe" index routine which uses Net:HTTP with SSL validation turned off.  Needed for when WebMock is in use
   # as it breaks SSL cert validations.
   def self.unsafe_index(index, type, payload)
-    request = Net::HTTP::Post.new("/#{index}/#{type}")
+    request = Net::HTTP::Post.new("#{ElasticResults.es_path}/#{index}/#{type}")
     request.body = payload.to_json
     http_client.request(request)
   end
@@ -116,12 +117,15 @@ module ElasticResults
   ElasticResults.es_type_coverage  ||= (ENV['ES_TYPE_COVERAGE']  || 'simplecov')
   ElasticResults.google_api_key    ||= ENV['GOOGLE_API_KEY']
   ElasticResults.use_unsafe_index  ||= defined?(WebMock)
+  ElasticResults.es_path ||= nil
 
   private
   def self.http_client
     uri = URI.parse(ElasticResults.es_url)
     http = Net::HTTP.new(uri.host, uri.port)
-
+    
+    ElasticResults.es_path ||= uri.path unless uri.path == ""
+    
     if ElasticResults.es_url =~ /https/
       http.use_ssl = true
       http.verify_mode = OpenSSL::SSL::VERIFY_NONE
@@ -136,13 +140,13 @@ module ElasticResults
   def self.ensure_index_exists(index, type)
     return if index_already_exists? index
 
-    request = Net::HTTP::Put.new("/#{index}")
+    request = Net::HTTP::Put.new("#{ElasticResults.es_path}/#{index}")
     request.body = mapping_for type
     http_client.request(request).value # this will error if the response isn't 200
   end
 
   def self.index_already_exists?(index)
-    path = "/#{index}"
+    path = "#{ElasticResults.es_path}/#{index}"
     response = http_client.request(Net::HTTP::Head.new(path))
     response.code == '200' # index is already there for that type
   end
